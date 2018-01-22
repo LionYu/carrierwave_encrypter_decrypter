@@ -30,7 +30,7 @@ module Openssl
       end
     end
 
-    def self.encrypt_for(obj)
+    def self.encrypt_for(obj, file_path)
       begin 
         model = obj.model
         mounted_as = obj.mounted_as
@@ -42,8 +42,8 @@ module Openssl
         model.key = key
         model.save!
         
-        original_file_path = File.expand_path(obj.store_path, obj.root)
-        encrypted_file_path = File.expand_path(obj.store_path, obj.root) + ".enc"
+        original_file_path = file_path
+        encrypted_file_path = file_path + ".enc"
         buf = ""
         File.open(encrypted_file_path, "wb") do |outf|
           File.open(original_file_path, "rb") do |inf|
@@ -53,7 +53,8 @@ module Openssl
             outf << cipher.final
           end
         end
-        File.unlink(original_file_path)     
+        File.unlink(original_file_path)
+        return encrypted_file_path
       rescue Exception => e  
         puts "****************************#{e.message}"
         puts "****************************#{e.backtrace.inspect}"
@@ -69,13 +70,12 @@ module Openssl
         cipher.iv = model.iv 
         cipher.key = model.key
         buf = ""
-        
-        original_file_path = Tempfile.new(obj.attributes[mounted_as.to_s]).path
-        # original_file_path =  obj.send(mounted_as).path 
-        encrypted_file_path =  obj.send(mounted_as).path  + ".enc"
+
+        original_file_path = Tempfile.new(obj.attributes[mounted_as.to_s].remove(".ecn")).path
+        encrypted_file_path =  obj.send(mounted_as).url
 
         File.open(original_file_path, "wb") do |outf|
-          File.open(encrypted_file_path, "rb") do |inf|
+          open(encrypted_file_path, "rb") do |inf|
             while inf.read(4096, buf)
               outf << cipher.update(buf)
             end
