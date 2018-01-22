@@ -12,4 +12,13 @@ class Encryption
       Openssl::Pkcs5.encrypt_for(obj)
     end
   end
+
+  def self.encrypt_existing_file_start!(obj)
+    encryption_type = Carrierwave::EncrypterDecrypter.configuration.encryption_type
+
+    case encryption_type
+    when :aes
+      Openssl::Aes.encrypt_existing_file_for(obj)
+    end
+  end
 end
